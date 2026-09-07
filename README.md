@@ -1,208 +1,207 @@
-# BB84 QKD Simulation
+# BB84 Quantum Key Distribution (QKD) Simulation
 
-A Qiskit-based simulation of the **BB84 Quantum Key Distribution (QKD)** protocol.
+A Qiskit-based simulation and analysis of the **BB84 Quantum Key Distribution (QKD)** protocol.
 
-The project demonstrates the complete QKD workflow, from quantum key exchange and basis reconciliation to eavesdropping detection, error reconciliation, and privacy amplification.
+This project implements the complete BB84 workflow, including quantum state preparation, transmission, eavesdropping, channel imperfections, basis reconciliation, key sifting, parameter estimation, QBER-based abort decisions, error reconciliation, privacy amplification, and final secret-key generation.
 
-The main goal is to study how **quantum-channel noise and eavesdropping affect QBER and the final secret-key generation process**.
+The project focuses on analyzing how **eavesdropping and quantum-channel imperfections affect QBER, security decisions, and the final secret-key rate**.
 
 ---
 
-# Project Overview
+## Project Overview
 
-Quantum Key Distribution allows two parties, **Alice and Bob**, to establish a shared secret key over a quantum channel while detecting potential eavesdropping.
+Quantum Key Distribution (QKD) enables two parties, **Alice and Bob**, to establish a shared secret key over a quantum channel while detecting disturbances that may indicate eavesdropping.
 
-This project implements and analyzes the BB84 protocol using **Qiskit**, with classical post-processing using Python, NumPy, and related tools.
+This project implements BB84 using **Qiskit** for quantum state preparation and measurement, with **Python and NumPy** used for classical processing and experimental analysis.
 
-The simulation focuses on:
+The simulation covers:
 
 * BB84 quantum state preparation and measurement
+* Random basis selection
 * Basis reconciliation and key sifting
-* Quantum Bit Error Rate (QBER) calculation
-* Quantum-channel noise
+* Quantum Bit Error Rate (QBER) estimation
 * Intercept-resend eavesdropping
-* Error reconciliation
-* Privacy amplification
+* Photon loss
+* Simplified quantum-channel bit-flip noise
+* Simplified detector dark-count errors
+* Parameter estimation
 * QBER-based abort decisions
-* Final secret-key rate analysis
+* Parity-based error reconciliation
+* Reconciliation leakage tracking
+* Toeplitz-matrix privacy amplification
+* Final secret-key generation
+* Key-rate analysis
+* Eve and channel-noise experiments
+* Finite-key statistical analysis
 * Comparison with theoretical BB84 behavior
 
 ---
 
 # Protocol Workflow
 
-The simulated QKD pipeline follows:
-
-<div align="center">
-
-<pre>
-Alice
-  ↓
-Random Bits and Bases
-  ↓
-Quantum State Preparation
-  ↓
-Quantum Channel
-  ↓
-Eve (Optional)
-  ↓
-Bob's Measurement
-  ↓
-Basis Reconciliation
-  ↓
-Key Sifting
-  ↓
-Parameter Estimation
-  ↓
-QBER Calculation
-  ↓
-Abort Decision
-  ↓
-Error Reconciliation
-  ↓
-Privacy Amplification
-  ↓
-Final Secret Key
-</pre>
-
-</div>
-
----
-
-# Project Structure
+The complete simulated QKD pipeline is:
 
 ```text
-.
-├── refactor will be after finishing the code
-├──
-├──
-├── README.md
+Alice
+  │
+  ├── Random Bits & Bases
+  │
+  ▼
+Quantum State Preparation
+  │
+  ▼
+Quantum Channel
+  │
+  ├── Photon Loss
+  ├── Channel Noise
+  └── Eve (Optional)
+  │
+  ▼
+Bob's Measurement
+  │
+  ▼
+Basis Reconciliation
+  │
+  ▼
+Key Sifting
+  │
+  ▼
+Parameter Estimation
+  │
+  ▼
+QBER Calculation
+  │
+  ▼
+Abort Decision
+  │
+  ├── QBER > Threshold → ABORT
+  │
+  ▼
+Error Reconciliation
+  │
+  ▼
+Privacy Amplification
+  │
+  ▼
+Final Secret Key
 ```
 
-### `file1.py`
-
-Implements the core BB84 key-exchange pipeline and validates the ideal case (this is an example).
-
-### `test.py`
-
-Extends the basic implementation with:
-
-* Eve intercept-resend attack
-* Channel-noise experiments
-* QBER analysis
-* Error reconciliation
-* Privacy amplification
-* Experimental analysis
+The classical communication channel is assumed to be **authenticated**, while Eve may observe the public basis-reconciliation and post-processing communication.
 
 ---
 
-# Requirements
+# BB84 Protocol
 
-Install the required Python packages:
-
-```bash
-pip install qiskit qiskit-aer numpy scipy matplotlib
-```
-
----
-
-# 1. BB84 Key Exchange
+## 1. Random Key and Basis Generation
 
 Alice generates:
 
 * A random binary key
-* A random basis for each bit
+* A random BB84 basis for each qubit
+
+Bob independently generates a random measurement basis for every transmitted qubit.
 
 The two BB84 bases are:
 
-* **Z basis**: computational basis
-* **X basis**: Hadamard basis
+### Z Basis — Computational Basis
 
-The states are prepared as follows:
-
-**Z basis:** **Bit 0 → |0⟩**    **Bit 1 → |1⟩**
-
-**X basis:** **Bit 0 → |+⟩**    **Bit 1 → |−⟩**
-
-Bob independently chooses a random measurement basis for every received qubit.
-
-The main exchange function is:
-
-```python
-run_bb84_exchange(n_qubits, p_eve=0.0)
+```text
+Bit 0 → |0⟩
+Bit 1 → |1⟩
 ```
 
-The simulation stores:
+### X Basis — Hadamard Basis
 
-* Alice's bits
-* Alice's bases
-* Bob's bases
-* Bob's measurement results
-* Eve's interception information when an attack is enabled
+```text
+Bit 0 → |+⟩
+Bit 1 → |−⟩
+```
+
+The quantum states are prepared and measured using **Qiskit quantum circuits**.
 
 ---
 
-# 2. Basis Reconciliation and Key Sifting
+# 2. Quantum State Preparation and Measurement
 
-After quantum transmission, Alice and Bob publicly compare their bases.
+The implementation uses Qiskit to model the actual BB84 quantum operations.
 
-They keep only the positions where their bases match.
-
-```python
-sift_keys(...)
-```
-
-For randomly selected BB84 bases, approximately half of the transmitted bits are expected to survive.
-
-### Expected behavior
+For the Z basis:
 
 ```text
-Sifting efficiency ≈ 50%
+0 → |0⟩
+1 → X|0⟩ = |1⟩
 ```
 
-Sifting efficiency is mainly determined by the randomly chosen measurement bases and is expected to remain approximately 50% in both experimental scenarios.
+For the X basis:
+
+```text
+0 → H|0⟩ = |+⟩
+1 → HX|0⟩ = |−⟩
+```
+
+Bob applies the appropriate measurement basis before measuring the received qubit.
+
+This allows the project to combine a **quantum-circuit implementation** with classical simulation and analysis.
 
 ---
 
-# 3. Quantum Bit Error Rate (QBER)
+# 3. Quantum Channel
 
-The **Quantum Bit Error Rate (QBER)** measures the fraction of mismatched bits in the sifted key.
+The quantum channel models imperfections that can occur during transmission.
 
-It is calculated using:
+The current simulation includes:
+
+### Photon Loss
+
+Controlled by:
 
 ```python
-compute_qber(alice_sifted, bob_sifted)
+p_loss
 ```
 
-QBER is a key indicator of the condition of the quantum channel.
+A transmitted qubit may be lost before reaching Bob.
 
-A non-zero QBER can result from **channel noise, eavesdropping, or both**.
+Loss reduces the number of usable detected qubits but does not directly represent a bit error.
 
-Therefore, the project does not assume that QBER must always be zero.
+### Simplified Bit-Flip Noise
 
-For an ideal reference case with no channel noise and no Eve:
+Controlled by:
 
-```text
-QBER ≈ 0%
+```python
+p_depolarizing
 ```
 
-However, in the main experiments, channel noise is enabled, so a non-zero QBER is expected even when Eve is disabled.
+> **Note:** The current implementation uses this parameter as a simplified **bit-flip error probability**, not a full physical depolarizing channel.
+
+When the noise event occurs, an `X` operation is applied to the qubit.
+
+This simplified model is intentionally used for the current simulation and analysis.
+
+### Dark-Count Model
+
+A simplified measurement-error model is also included through:
+
+```python
+p_dark_counts
+```
+
+This can randomly flip Bob's measured bit to model detector-related errors.
 
 ---
 
 # 4. Eavesdropping Model
 
-The project implements an **intercept-resend attack**.
+The project implements an **Intercept-Resend attack**.
 
-For every qubit that Eve intercepts:
+For every qubit intercepted by Eve:
 
-1. Eve randomly chooses a measurement basis.
+1. Eve randomly selects a measurement basis.
 2. Eve measures the qubit.
 3. Eve obtains a classical bit.
 4. Eve prepares a new qubit using her measurement result.
 5. Eve sends the new qubit to Bob.
 
-The probability of interception is controlled by:
+The interception probability is controlled by:
 
 ```python
 p_eve
@@ -211,129 +210,173 @@ p_eve
 where:
 
 ```text
-p_eve = 0.0  → No interception
-p_eve = 1.0  → Eve intercepts every qubit
+p_eve = 0.0 → Eve does not intercept
+p_eve = 1.0 → Eve intercepts every qubit
 ```
 
-The Eve attack is studied together with channel noise rather than as a separate experimental scenario.
+For an ideal BB84 channel with intercept-resend eavesdropping, the expected QBER contribution is approximately:
+
+```text
+QBER ≈ 0.25 × p_eve
+```
+
+Therefore:
+
+```text
+p_eve = 0.0 → ≈ 0% QBER contribution
+p_eve = 0.5 → ≈ 12.5%
+p_eve = 1.0 → ≈ 25%
+```
+
+The 25% value is the theoretical benchmark for the **ideal Eve-only case**.
+
+When channel noise is also enabled, the measured QBER represents the combined effect of channel imperfections and Eve.
 
 ---
 
-# 5. Quantum Channel Noise
+# 5. Basis Reconciliation and Key Sifting
 
-A channel-noise model is included to distinguish **natural channel errors** from additional disturbances caused by Eve.
+After quantum transmission, Alice and Bob publicly compare their measurement bases.
 
-The current model considers:
-
-### Photon Loss
-
-A qubit may be lost during transmission.
-
-```python
-p_loss
-```
-
-controls the probability of loss.
-
-### Depolarizing Noise
-
-Depolarizing noise introduces errors into the transmitted quantum state.
-
-```python
-p_depolarizing
-```
-
-controls the noise probability.
-
-The noise model is represented by:
-
-```python
-apply_channel_noise(qc, p_loss, p_depolarizing)
-```
-
-The experiments use the channel-noise model as a baseline and then study the additional effect of Eve.
-
-The two main scenarios are:
+They keep only the positions where:
 
 ```text
-Scenario 1:
-No Eve + Channel Noise
-
-Scenario 2:
-Eve + Channel Noise
+Alice Basis == Bob Basis
 ```
 
-This allows the project to investigate how much additional QBER is introduced when eavesdropping is added to an already noisy quantum channel.
+Lost qubits are also excluded.
+
+The resulting bits form the **sifted key**.
+
+For independently random BB84 bases, the expected sifting efficiency is:
+
+```text
+≈ 50%
+```
+
+The implementation records the number of transmitted and sifted bits and calculates the corresponding sifting efficiency.
 
 ---
 
 # 6. Parameter Estimation
 
-Before producing the final secret key, Alice and Bob estimate the QBER using a sample of the sifted key.
+Before generating the final secret key, Alice and Bob use a randomly selected portion of the sifted key to estimate the channel error rate.
 
-The general process is:
+The process is:
 
 ```text
 Sifted Key
-    ↓
-Random Sample
-    ↓
-Estimate QBER
-    ↓
-Compare with Threshold
+    │
+    ▼
+Random Estimation Sample
+    │
+    ▼
+QBER Estimation
+    │
+    ▼
+Threshold Comparison
 ```
 
-The estimated QBER is used to determine whether the protocol can safely continue.
+The sampled bits are removed from the remaining key material and are not used directly for the final secret key.
 
-This step models the parameter-estimation stage used in practical QKD systems.
+The remaining bits are used for reconciliation and privacy amplification.
 
-Because channel noise is present in the experiments, parameter estimation is important for determining whether the observed error rate is within the acceptable operating range.
+The current implementation uses:
+
+```python
+ESTIMATION_FRACTION = 0.25
+```
+
+meaning approximately 25% of the sifted key is used for parameter estimation.
 
 ---
 
-# 7. Abort Decision
+# 7. QBER
 
-If the estimated QBER is too high, Alice and Bob should not continue generating a secret key.
-
-The protocol follows:
-
-<pre align="left">
- QBER ≤ Threshold
-       ↓
-    Continue
-       ↓
- Reconciliation
-       ↓
-Privacy Amplification
-       ↓
-   Final Key
-</pre>
-
-while:
+The **Quantum Bit Error Rate (QBER)** is calculated as:
 
 ```text
-QBER > Threshold
-       ↓
-     ABORT
-       ↓
-No final secret key
+QBER = Number of mismatched bits
+       ─────────────────────────
+       Number of tested bits
 ```
 
-A commonly referenced BB84 benchmark is around **11% QBER** under standard assumptions for reconciliation and privacy amplification.
+QBER can increase because of:
 
-The threshold is treated as a security benchmark rather than a universal constant, since practical QKD security depends on the protocol assumptions, error-correction method, finite-key effects, and implementation details.
+* Channel noise
+* Photon-related imperfections
+* Detector errors
+* Eavesdropping
+* A combination of these effects
 
-Importantly, the threshold is evaluated against the **total observed QBER**, which can contain contributions from both channel noise and Eve.
+For an ideal BB84 reference case with no Eve and no channel noise:
+
+```text
+QBER ≈ 0%
+```
+
+A non-zero QBER therefore does **not automatically prove that Eve is present**.
 
 ---
 
-# 8. Error Reconciliation
+# 8. Abort Decision
 
-Errors can occur in the sifted keys because of channel noise or eavesdropping.
+The estimated QBER is compared against a predefined threshold.
 
-The project implements a simplified parity-based reconciliation approach.
+The current implementation uses:
 
-Main functions:
+```python
+Q_THRESHOLD = 0.11
+```
+
+The decision process is:
+
+```text
+QBER ≤ 11%
+      │
+      ▼
+   Continue
+      │
+      ▼
+Reconciliation
+      │
+      ▼
+Privacy Amplification
+      │
+      ▼
+Final Key
+```
+
+If:
+
+```text
+QBER > 11%
+```
+
+the protocol aborts and no final secret key is generated.
+
+The approximately 11% value is used as an **asymptotic BB84 security benchmark under idealized assumptions**. It is not a universal threshold for every practical QKD implementation.
+
+Real security limits depend on factors such as:
+
+* Error-correction efficiency
+* Finite-key effects
+* Source imperfections
+* Detector behavior
+* Security model
+* Implementation assumptions
+
+The threshold is applied to the **total observed QBER**, including both channel noise and potential eavesdropping.
+
+---
+
+# 9. Error Reconciliation
+
+After parameter estimation, Alice and Bob need to correct discrepancies between their remaining keys.
+
+The project implements a **simplified parity-based reconciliation algorithm**.
+
+The main functions include:
 
 ```python
 block_parity(bits)
@@ -344,39 +387,68 @@ binary_search_correct(...)
 ```
 
 ```python
-reconcile_keys(alice_sifted, bob_sifted, block_size=8)
+reconcile_keys(...)
 ```
 
-The process is:
+The current approach:
 
-1. Divide the key into blocks.
-2. Calculate the parity of each block.
-3. Compare Alice's and Bob's parity values.
-4. Detect blocks with different parity.
-5. Use binary search to locate a single-bit error.
-6. Correct the detected error.
-7. Track the amount of information revealed during reconciliation.
+1. Divides the key into blocks.
+2. Calculates the parity of each block.
+3. Compares Alice's and Bob's parity.
+4. Identifies blocks with different parity.
+5. Uses binary search to locate a single-bit error.
+6. Corrects the detected error.
+7. Tracks the information revealed during reconciliation.
 
-The leaked information is stored as:
+The amount of information revealed during error correction is tracked using:
 
 ```text
 leak_EC
 ```
 
+### Important Note
+
+This is a **simplified reconciliation model**, not a complete implementation of the practical Cascade protocol.
+
+In particular, the current implementation uses a single block-parity pass. Multiple errors inside the same block may cancel each other in the parity calculation and remain undetected.
+
+The simplified implementation is sufficient for demonstrating the main QKD post-processing concept within this simulation.
+
 ---
 
-# 9. Privacy Amplification
+# 10. Privacy Amplification
 
-Even after reconciliation, Eve may have partial information about the key.
+Even after reconciliation, Eve may potentially possess partial information about the reconciled key.
 
-Privacy amplification reduces this possible information by compressing the reconciled key.
+Privacy amplification reduces this potential information by compressing the key.
 
 The project uses **Toeplitz-matrix universal hashing**.
 
-Main functions:
+The process is:
+
+```text
+Reconciled Key
+      │
+      ▼
+Estimate Information Leakage
+      │
+      ▼
+Calculate Final Key Length
+      │
+      ▼
+Generate Toeplitz Matrix
+      │
+      ▼
+Universal Hashing
+      │
+      ▼
+Final Secret Key
+```
+
+The main functions are:
 
 ```python
-binary_entropy(q)
+binary_entropy(qber)
 ```
 
 ```python
@@ -391,382 +463,489 @@ generate_toeplitz_matrix(m, n)
 apply_toeplitz(T, key_bits)
 ```
 
-The general process is:
+The final key length accounts for:
 
-```text
-Reconciled Key
-      ↓
-Estimate Information Leakage
-      ↓
-Choose Shorter Key Length
-      ↓
-Toeplitz Universal Hashing
-      ↓
-Final Simulated Secret Key
-```
+* Reconciliation leakage
+* QBER-dependent information estimation
+* A security margin
 
-In general:
+Conceptually:
 
 ```text
 Higher QBER
-      ↓
-More estimated information leakage
-      ↓
+     ↓
+More estimated leakage
+     ↓
 Shorter final key
 ```
 
-The current key-length calculation is a **simulation heuristic** and should not be interpreted as a complete finite-key security proof.
+The current key-length calculation is a **simulation-oriented asymptotic heuristic** and should not be interpreted as a complete composable finite-key security proof.
 
 ---
 
-# 10. Experimental Scenarios
+# 11. Key-Rate Analysis
 
-The project evaluates **two main scenarios**.
+The project analyzes the relationship between QBER and the final secret-key rate.
+
+Two useful quantities are considered conceptually:
+
+### Key Rate per Transmitted Qubit
+
+```text
+R_sent = Final Key Length / Number of Sent Qubits
+```
+
+### Key Rate per Sifted/Usable Key Bit
+
+```text
+R_sifted = Final Key Length / Number of Sifted Key Bits
+```
+
+The distinction is important because BB84 naturally loses approximately half of the transmitted bits during basis sifting.
+
+Theoretical BB84 behavior is also used as a benchmark:
+
+```text
+r_theory ≈ 1 − 2h₂(Q)
+```
+
+where `h₂(Q)` is the binary entropy function.
+
+The theoretical expression represents an idealized asymptotic benchmark, while the simulated key rate additionally reflects:
+
+* Sifting
+* Parameter estimation
+* Reconciliation leakage
+* Security margin
+* Channel imperfections
 
 ---
 
-## Scenario 1 — Channel Noise Without Eve
+# 12. Experimental Scenarios
 
-In this scenario, Eve is disabled while channel noise is enabled.
+The simulation evaluates the system under multiple conditions.
+
+## Scenario 1 — Ideal Reference
+
+```text
+Eve = OFF
+Noise = OFF
+Loss = OFF
+```
+
+Expected behavior:
+
+```text
+Sifting Efficiency ≈ 50%
+QBER ≈ 0%
+```
+
+This validates the basic BB84 implementation.
+
+---
+
+## Scenario 2 — Channel Noise Only
 
 ```text
 Eve = OFF
 Channel Noise = ON
 ```
 
-The channel-noise probability is varied to study its effect on the QKD system.
+This experiment studies the effect of natural channel imperfections.
 
 Expected behavior:
 
 ```text
-Increasing channel noise
-          ↓
+Increasing Noise
+       ↓
 Increasing QBER
-          ↓
-Increasing information leakage
-          ↓
-Shorter final key
-          ↓
-Possible protocol abort
+       ↓
+Higher Estimated Leakage
+       ↓
+Lower Final Key Rate
+       ↓
+Possible Abort
 ```
 
-This scenario is important for analyzing **false-positive eavesdropping detection**.
-
-A high QBER does not automatically prove that Eve is present, because normal channel noise can also introduce errors.
+This scenario demonstrates that a noisy channel can produce a non-zero QBER even when Eve is absent.
 
 ---
 
-## Scenario 2 — Eve + Channel Noise
-
-In this scenario, both Eve and channel noise are enabled.
+## Scenario 3 — Eve + Channel Noise
 
 ```text
 Eve = ON
 Channel Noise = ON
 ```
 
-The Eve interception probability is varied while the channel-noise model is also active.
+The Eve interception probability is varied while channel imperfections remain active.
 
 Expected behavior:
 
 ```text
 Channel Noise + Eve
         ↓
-Additional quantum errors
-        ↓
 Higher QBER
         ↓
-Higher estimated information leakage
+Higher Information Leakage
         ↓
-Lower final key rate
+Lower Final Key Rate
         ↓
-Possible protocol abort
+Possible Abort
 ```
 
-The experiment studies how the QBER and final secret-key rate change when eavesdropping is added to a noisy quantum channel.
+This experiment demonstrates the additional disturbance introduced by eavesdropping.
 
 ---
 
-# 11. Results and Analysis
+# 13. Finite-Key Analysis
 
-The project evaluates the following metrics.
+The project also explores the effect of finite key sizes.
 
-### Sifting Efficiency
+The simulation evaluates multiple key sizes and repeats the experiment over multiple trials.
 
-The percentage of transmitted bits remaining after basis reconciliation.
+The analysis focuses on:
 
-Expected:
+* Mean QBER
+* QBER standard deviation
+* Abort probability
+* Statistical fluctuations caused by finite sample sizes
 
-```text
-≈ 50%
-```
+This demonstrates an important difference between theoretical asymptotic results and practical finite-length QKD experiments.
 
-This should remain approximately 50% because Alice's and Bob's bases are chosen independently at random.
+The finite-key experiments are **experimental/statistical analysis**, not a formal finite-key security proof.
 
-### QBER
+---
 
-QBER is measured for both experimental scenarios:
+# 14. Main Experimental Outputs
 
-```text
-Scenario 1:
-No Eve + Channel Noise
+The project generates several plots for analysis.
 
-Scenario 2:
-Eve + Channel Noise
-```
-
-The comparison shows the additional disturbance caused by Eve on top of the existing channel noise.
-
-### QBER vs Channel Noise
-
-For Scenario 1, the channel-noise probability is varied.
-
-Expected:
+### QBER vs Eve Attack Strength
 
 ```text
-Increasing channel noise
-          ↓
-Increasing QBER
+qber_vs_attack_strength.png
 ```
 
-This demonstrates that a noisy channel can produce a non-zero QBER even when no eavesdropper is present.
-
-### QBER vs Eve Attack Probability
-
-For Scenario 2, Eve's interception probability is varied while channel noise remains enabled.
-
-The measured QBER is expected to increase as Eve intercepts more qubits.
-
-For the ideal intercept-resend contribution alone:
+This compares the simulated QBER against Eve's interception probability and the theoretical:
 
 ```text
 QBER ≈ 0.25 × p_eve
 ```
 
-With channel noise also present, the total measured QBER is expected to be higher than the ideal Eve-only contribution.
+---
 
-### Final Key Rate
-
-The project studies how the final key rate changes with increasing QBER.
-
-Conceptually:
+### Final Key Rate vs QBER
 
 ```text
-QBER increases
-      ↓
-Security margin decreases
-      ↓
-Final key length decreases
+keyrate_vs_qber.png
 ```
 
-If the estimated QBER exceeds the abort threshold:
-
-```text
-Protocol → ABORT
-Final key → Not generated
-```
+This demonstrates the relationship between increasing QBER and decreasing secret-key generation capability.
 
 ---
 
-# 12. Theoretical Benchmarking
-
-The simulation results are compared with the expected theoretical behavior of BB84.
-
-Important reference points include:
-
-| Quantity                              | Theoretical Expectation |
-| ------------------------------------- | ----------------------: |
-| Random-basis sifting efficiency       |                   ≈ 50% |
-| Ideal QBER without Eve/noise          |                    ≈ 0% |
-| Full intercept-resend QBER            |                   ≈ 25% |
-| Partial intercept-resend contribution |         ≈ 25% × `p_eve` |
-| Common BB84 security benchmark        |              ≈ 11% QBER |
-
-The **25% intercept-resend value applies to the ideal Eve-only case**.
-
-Since the main experiments include channel noise, the experimentally observed QBER represents the combined effect of:
+### Eve × Noise Heatmap
 
 ```text
-Channel Noise + Eve-induced Errors
+eve_noise_heatmap.png
 ```
 
-Therefore, the simulation should not be expected to produce exactly 25% QBER when `p_eve = 1` if channel noise is also enabled.
+This visualizes how QBER changes as both:
 
-The purpose of the comparison is to verify that the simulation reproduces the qualitative security behavior predicted by BB84 theory.
+* Eve's interception probability
+* Channel-noise probability
+
+are varied.
 
 ---
 
-# 13. Security Discussion
+### Finite-Key Sweep
 
-Although the simulation demonstrates the main BB84 security mechanism, a practical QKD system involves additional security considerations.
+```text
+finite_key_sweep.png
+```
 
-### Finite-Key Effects
+This analyzes the statistical behavior of QBER and abort decisions for different key sizes.
 
-The simulation uses finite numbers of qubits, while many theoretical security expressions are derived under asymptotic assumptions.
+---
 
-With a finite key, statistical fluctuations in the measured QBER must be considered.
+# 15. Theoretical Benchmarks
 
-### Imperfect Photon Sources
+The simulation is compared against the expected theoretical behavior of BB84.
+
+| Quantity                              | Expected Behavior |
+| ------------------------------------- | ----------------: |
+| Random-basis sifting efficiency       |             ≈ 50% |
+| Ideal QBER without Eve/noise          |              ≈ 0% |
+| Full intercept-resend QBER            |             ≈ 25% |
+| Partial intercept-resend contribution |   ≈ 25% × `p_eve` |
+| Common asymptotic BB84 benchmark      |        ≈ 11% QBER |
+| Ideal asymptotic secret fraction      |      `1 − 2h₂(Q)` |
+
+The 25% intercept-resend benchmark applies to the **ideal Eve-only case**.
+
+When channel noise is enabled, the experimentally observed QBER can be higher because it contains both:
+
+```text
+Channel Errors + Eve-Induced Errors
+```
+
+Therefore, the simulation should not be expected to produce exactly 25% QBER at full Eve interception when additional channel noise is enabled.
+
+---
+
+# 16. Security Assumptions
+
+The current simulation uses the following assumptions:
+
+* Ideal single-photon source
+* Ideal quantum detectors
+* Authenticated classical communication
+* Prepare-and-measure BB84
+* Simplified channel-noise model
+* Simplified detector dark-count model
+* Asymptotic security expressions as the primary theoretical reference
+* Finite-key behavior explored experimentally
+* No detector side-channel attacks modeled
+* No photon-number-splitting attack modeled
+
+These assumptions keep the project focused on the core BB84 security mechanism.
+
+---
+
+# 17. Security Discussion
+
+## Finite-Key Effects
+
+Theoretical BB84 security expressions are often derived under asymptotic assumptions.
+
+For finite numbers of transmitted qubits, statistical fluctuations affect the estimated QBER and therefore the confidence of the security analysis.
+
+The project explores this experimentally through different key sizes.
+
+---
+
+## Imperfect Photon Sources
 
 Real QKD systems may use weak coherent pulses rather than ideal single-photon sources.
 
-This can introduce vulnerabilities such as photon-number-splitting attacks.
+This can introduce additional security concerns, including photon-number-splitting attacks.
 
-### Detector Side Channels
+These effects are outside the current simulation scope.
 
-Real hardware may have implementation-specific vulnerabilities in detectors and measurement devices.
+---
 
-These side channels are outside the scope of the current simulation.
+## Detector Side Channels
 
-### Simplified Reconciliation
+Real QKD hardware can contain implementation-specific vulnerabilities in detectors and measurement devices.
 
-The current reconciliation algorithm is intentionally simpler than practical protocols such as Cascade.
+Such side-channel attacks are not modeled in the current implementation.
 
-### Noise vs Eavesdropping
+---
 
-An important limitation of the simulation is that QBER alone cannot identify the exact source of the errors.
+## Reconciliation Limitations
 
-Both channel noise and Eve can increase QBER.
+The current error-reconciliation algorithm is intentionally simplified.
 
-The purpose of the two experimental scenarios is therefore to demonstrate the difference between:
+It demonstrates:
 
 ```text
-Natural Channel Errors
-        vs
-Channel Errors + Eavesdropping
+Parity Checking
+      ↓
+Error Detection
+      ↓
+Binary Search
+      ↓
+Error Correction
+      ↓
+Leakage Tracking
 ```
 
-rather than claiming that any non-zero QBER proves the presence of Eve.
+but it is not a complete implementation of Cascade.
 
 ---
 
-# 14. Known Limitations
+## Noise vs Eavesdropping
 
-## Error Reconciliation
+QBER alone cannot determine the exact source of observed errors.
 
-The current implementation uses a single block-parity pass.
-
-If multiple errors occur in the same block, an even number of errors may cancel in the parity calculation and remain undetected.
-
-More advanced protocols such as Cascade use multiple passes and different block arrangements.
-
-This implementation therefore represents a simplified educational reconciliation model.
-
----
-
-## Channel Noise
-
-The channel-noise model is being integrated into the complete BB84 pipeline.
-
-Until integration is complete, the noise function alone does not affect the main exchange results.
-
----
-
-## Abort Logic
-
-The protocol requires an explicit QBER-based abort decision.
-
-The intended behavior is:
+Both:
 
 ```text
-QBER > threshold → ABORT
+Channel Noise
 ```
 
-rather than simply generating a shorter key.
-
-The threshold is applied to the total measured QBER, including errors caused by channel noise and potential eavesdropping.
-
----
-
-## Privacy Amplification Security Model
-
-The final key-length calculation is a simplified heuristic.
-
-It demonstrates the relationship between:
+and:
 
 ```text
-QBER
-Leakage
-Final Key Length
+Eavesdropping
 ```
 
-but it is not a complete finite-key security proof.
+can increase QBER.
+
+Therefore, the project uses controlled experiments to study how Eve adds additional disturbance to an already noisy channel rather than claiming that every non-zero QBER proves Eve is present.
 
 ---
 
-# 15. Implementation Status
+# 18. Implementation Status
 
-| # | Feature | Status |
-| :-: | :-------------------------------------------- | :------------------------------------ |
-| 1 | BB84 key exchange | ✅ Complete |
-| 2 | Ideal-case validation | ✅ Complete |
-| 3 | Eve intercept-resend attack | ✅ Complete |
-| 4 | Channel noise model | ⚠️ Implemented, integration in progress |
-| 5 | Parameter estimation | ⚠️ In progress |
-| 6 | QBER abort decision | ⚠️ In progress |
-| 7 | Error reconciliation | ✅ Complete |
-| 8 | Reconciliation leakage tracking | ✅ Complete |
-| 9 | Privacy amplification | ✅ Complete |
-| 10 | Scenario 1: Channel noise without Eve | ⚠️ In progress |
-| 11 | Scenario 2: Channel noise + Eve | ⚠️ In progress |
-| 12 | QBER vs channel noise | ⚠️ In progress |
-| 13 | QBER vs Eve attack probability with channel noise | ⚠️ In progress |
-| 14 | Final key rate vs QBER | ⚠️ In progress |
-| 15 | Final key rate vs Eve + channel noise | ⚠️ In progress |
-| 16 | Full theoretical benchmarking | ⚠️ Partial |
+| Feature                            |      Status     |
+| ---------------------------------- | :-------------: |
+| BB84 key exchange                  |    ✅ Complete   |
+| Qiskit state preparation           |    ✅ Complete   |
+| Qiskit measurement                 |    ✅ Complete   |
+| Ideal-case validation              |    ✅ Complete   |
+| Eve intercept-resend attack        |    ✅ Complete   |
+| Photon-loss model                  |    ✅ Complete   |
+| Simplified bit-flip channel noise  |    ✅ Complete   |
+| Simplified dark-count model        |    ✅ Complete   |
+| Basis reconciliation               |    ✅ Complete   |
+| Key sifting                        |    ✅ Complete   |
+| Parameter estimation               |    ✅ Complete   |
+| QBER calculation                   |    ✅ Complete   |
+| QBER-based abort decision          |    ✅ Complete   |
+| Error reconciliation               |    ✅ Complete   |
+| Reconciliation leakage tracking    |    ✅ Complete   |
+| Toeplitz privacy amplification     |    ✅ Complete   |
+| Final key generation               |    ✅ Complete   |
+| QBER vs Eve analysis               |    ✅ Complete   |
+| Eve × Noise analysis               |    ✅ Complete   |
+| Final key-rate analysis            |    ✅ Complete   |
+| Finite-key analysis                |    ✅ Complete   |
+| Theoretical benchmarking           |    ✅ Complete   |
+| Formal composable finite-key proof | ⚠️ Out of scope |
+| Full Cascade implementation        | ⚠️ Out of scope |
+| Full physical depolarizing channel | ⚠️ Out of scope |
+| Hardware QKD implementation        | ⚠️ Out of scope |
 
 ---
 
-# 16. How to Run
+# 19. Requirements
 
+Install the required Python packages:
+
+```bash
+pip install qiskit qiskit-aer numpy scipy matplotlib
+```
+
+Python 3.9+ is recommended.
 
 ---
 
-# 17. Expected Behavior
+# 20. How to Run
+
+Run the main Python simulation:
+
+```bash
+python <your_main_file>.py
+```
+
+The program runs the BB84 experiments and generates the corresponding analysis plots.
+
+The main outputs include:
+
+```text
+qber_vs_attack_strength.png
+keyrate_vs_qber.png
+eve_noise_heatmap.png
+finite_key_sweep.png
+```
+
+---
+
+# 21. Expected Results
 
 The simulation should reproduce the following general behavior:
 
-| Quantity | Expected Behavior |
-| :------: | :---------------: |
-| Sifting efficiency | ≈ 50% |
-| Ideal reference QBER | ≈ 0% |
-| Channel noise | QBER increases |
-| Channel noise + no Eve | Non-zero QBER is possible |
-| Adding Eve to noisy channel | QBER increases further |
-| Full intercept-resend contribution | ≈ 25% in the ideal Eve-only case |
-| Increasing QBER | Final key rate decreases |
-| QBER above threshold | Protocol aborts |
+| Quantity                    | Expected Behavior         |
+| --------------------------- | ------------------------- |
+| Sifting efficiency          | ≈ 50%                     |
+| Ideal reference QBER        | ≈ 0%                      |
+| Channel noise               | QBER increases            |
+| Noise without Eve           | Non-zero QBER is possible |
+| Adding Eve                  | QBER increases further    |
+| Full ideal intercept-resend | ≈ 25% QBER                |
+| Increasing QBER             | Final key rate decreases  |
+| High QBER                   | Final key becomes shorter |
+| QBER above threshold        | Protocol aborts           |
 
-The key distinction is:
+The central relationship is:
 
 ```text
-Scenario 1
-Channel Noise
-     ↓
-Non-zero QBER possible
-     ↓
-No Eve
-
-Scenario 2
-Channel Noise + Eve
-     ↓
-Additional errors
-     ↓
-Higher QBER
-     ↓
-Possible ABORT
+More Noise / More Eve
+        ↓
+      Higher QBER
+        ↓
+ More Information Leakage
+        ↓
+   Shorter Final Key
+        ↓
+    Possible Abort
 ```
 
-# 18. SDG Relevance
+---
 
-This project is primarily connected to:
+# 22. Project Goals
 
-### SDG 9 — Industry, Innovation and Infrastructure
+The main goals of this project are to:
 
-QKD is a promising technology for future secure communication infrastructure and quantum-safe networking.
+1. Implement the BB84 QKD protocol using Qiskit.
+2. Demonstrate how basis reconciliation produces the sifted key.
+3. Measure QBER under ideal, noisy, and eavesdropped conditions.
+4. Demonstrate the security impact of an intercept-resend attack.
+5. Distinguish channel noise from additional eavesdropping disturbance.
+6. Implement simplified error reconciliation.
+7. Apply Toeplitz-based privacy amplification.
+8. Analyze final secret-key generation and key rates.
+9. Explore finite-key statistical effects.
+10. Compare experimental behavior with theoretical BB84 benchmarks.
 
-It also relates to:
+---
 
-### SDG 16 — Peace, Justice and Strong Institutions
+# 23. Conclusion
 
-Secure and tamper-evident communication can support trust in digital infrastructure, financial systems, institutions, and cross-border data exchange.
+This project demonstrates an end-to-end simulation of **BB84 Quantum Key Distribution**, from quantum state preparation and transmission to final secret-key generation.
+
+The experiments show the fundamental security behavior of BB84:
+
+```text
+Quantum Channel
+      ↓
+Measurement
+      ↓
+QBER Estimation
+      ↓
+Security Decision
+      ↓
+Error Reconciliation
+      ↓
+Privacy Amplification
+      ↓
+Final Secret Key
+```
+
+The simulation demonstrates that:
+
+* BB84 produces approximately 50% sifting efficiency under random basis selection.
+* An ideal channel produces approximately 0% QBER.
+* Intercept-resend eavesdropping introduces measurable errors.
+* Full intercept-resend produces approximately 25% QBER in the ideal Eve-only case.
+* Channel noise can also increase QBER without an attacker.
+* Increasing QBER reduces the amount of extractable secret key.
+* Excessive QBER causes the protocol to abort.
+* Privacy amplification reduces the potential information available to an adversary.
+
+The project therefore provides a practical simulation-based demonstration of the core security principles behind **Quantum Key Distribution and BB84**.
+
+---
+
+# 24. Team
+
+### Team QRYPTQ
+
+**Alexandria Quantum Hackathon 2026**
+
+Track: **Securing the Quantum Channel — Quantum Key Distribution (QKD)**
+
+---
