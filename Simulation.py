@@ -63,12 +63,12 @@ if eve_basis == 0:
       qc.x(0)
       qc.h(0)
 
-    # Bob reaches wtv qubit reaches him
-    if bob_basis[i] == 1:
-        qc.h(0)
-    qc.measure(0, 0)
-    result = simulator.run(qc, shots=1).result()
-    bob_bit = int(list(result.get_counts().keys())[0])
-    bob_results.append(bob_bit)
+# Bob measures wtv qubit reaches him
+if bob_basis[i] == 1:
+    qc.h(0)
+qc.measure(0, 0)
+result = simulator.run(qc, shots=1).result()
+bob_bit = int(list(result.get_counts().keys())[0])
+bob_results.append(bob_bit)
 
 bob_results = np.array(bob_results)
